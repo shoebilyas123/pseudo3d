@@ -13,6 +13,7 @@ export class Player extends Agent {
   stroke: string;
   fill: string;
   rays: Array<Ray>;
+  fov: number;
 
   constructor(
     x: number,
@@ -27,11 +28,15 @@ export class Player extends Agent {
     this.size = r;
     this.stroke = s || 'white';
     this.fill = f || 'gray';
-
+    this.fov = 30;
     this.rays = [];
 
     this.rotation = 180 / Math.PI;
-    for (let a = this.rotation - 45; a <= this.rotation + 45; a += 1) {
+    for (
+      let a = this.rotation - this.fov;
+      a <= this.rotation + this.fov;
+      a += 1
+    ) {
       this.rays.push(new Ray(this.pos, (a * Math.PI) / 180));
     }
   }
@@ -125,7 +130,7 @@ export class Player extends Agent {
     this.rays = [];
     const rayAngle = (this.rotation * 180) / Math.PI;
 
-    for (let a = rayAngle - 45; a <= rayAngle + 45; a += 1) {
+    for (let a = rayAngle - this.fov; a <= rayAngle + this.fov; a += 1) {
       this.rays.push(new Ray(this.pos, (a * Math.PI) / 180));
     }
   }
