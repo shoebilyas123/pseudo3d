@@ -1,10 +1,10 @@
-import { CavnasAPI } from '../canvas';
+import CavnasAPI from '../canvas';
 import { MOUSE } from '../lib/canvas';
-import { createVector2D } from '../lib/physics';
-import { LineCollider } from './linecollider';
+import { createVector2D } from '../lib/geometry';
+import LineCollider from '../collisions/linecollider';
 import Vector from './vector';
 
-export class Ray {
+export default class Ray {
   pos: Vector;
   dir: Vector;
 
@@ -19,7 +19,7 @@ export class Ray {
     this.dir.normalize();
   }
 
-  cast(wall: LineCollider) {
+  lookAtWall(wall: LineCollider) {
     const x1 = wall.a.x;
     const y1 = wall.a.y;
     const x2 = wall.b.x;
@@ -46,15 +46,12 @@ export class Ray {
   }
 
   draw(cP: CavnasAPI) {
+    cP.stroke('gray');
     cP.line(
       this.pos.x,
       this.pos.y,
       this.pos.x + this.dir.x * 40,
-      this.pos.y + this.dir.y * 40,
-      {
-        stroke: 'gray',
-        lineWidth: 2,
-      }
+      this.pos.y + this.dir.y * 40
     );
   }
 }

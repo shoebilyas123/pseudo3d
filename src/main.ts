@@ -1,5 +1,3 @@
 import './style.css';
-import { Game } from './game';
 
-const game = new Game();
-console.log(game);
+// Cleaned up the code and will implement pseudo 3d again tomorrow

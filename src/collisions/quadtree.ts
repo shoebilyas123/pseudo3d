@@ -1,7 +1,7 @@
-import { CavnasAPI } from '../canvas';
-import { createVector2D } from '../lib/physics';
-import { SphereCollider } from '../physics/spherecollider';
-import Vector from '../physics/vector';
+import CavnasAPI from '../canvas';
+import { createVector2D } from '../lib/geometry';
+import SphereCollider from './spherecollider';
+import Vector from '../geometry/vector';
 
 export class Boundary {
   pos: Vector;
@@ -33,7 +33,7 @@ export class Boundary {
   }
 }
 
-export class QTree {
+export default class QTree {
   bound: Boundary;
   points: SphereCollider[];
   isSubdivided: boolean;
@@ -93,15 +93,13 @@ export class QTree {
   }
 
   draw(cP: CavnasAPI) {
+    cP.noFill();
+    cP.stroke('white');
     cP.rect(
       this.bound.pos.x,
       this.bound.pos.y,
       this.bound.width * 2,
-      this.bound.height * 2,
-      {
-        fill: 'rgba(0,0,0,0)',
-        stroke: 'white',
-      }
+      this.bound.height * 2
     );
     if (this.isSubdivided) {
       this.bl?.draw(cP);

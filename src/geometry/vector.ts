@@ -1,5 +1,5 @@
-import { NOT_DEFINED } from '../constants/physics';
-import { random } from '../lib/utils';
+import { NOT_DEFINED } from '../constants';
+import { random } from '../lib/math';
 
 export default class Vector {
   x: number;
@@ -128,7 +128,6 @@ export default class Vector {
   angle() {
     return Math.atan2(this.y, this.x);
   }
-
   copy() {
     return new Vector(this.x, this.y);
   }

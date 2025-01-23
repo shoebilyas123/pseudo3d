@@ -1,13 +1,13 @@
 import { CavnasAPI } from '../canvas';
-import { P_ACC, P_VEL } from '../constants/physics';
+import { MAX_PLAYER_ACC, MAX_PLAYER_VEL } from '../constants';
 import { KEYPRESSED } from '../lib/canvas';
-import { toRadians } from '../lib/utils';
-import { Agent } from '../physics/agent';
-import { LineCollider } from '../physics/linecollider';
-import { Ray } from '../physics/ray';
-import Vector from '../physics/vector';
+import { toRadians } from '../lib/math';
+import { Agent } from '../auto/agent';
+import { LineCollider } from '../collisions/linecollider';
+import { Ray } from '../geometry/ray';
+import { Vector } from '../geometry';
 
-export class Player extends Agent {
+export default class Player extends Agent {
   mass: number;
   size: number;
   stroke: string;
@@ -41,8 +41,10 @@ export class Player extends Agent {
     }
   }
 
-  getMovement(): Vector {
+  updateAcc() {
     const accForce = new Vector(0, 0);
+    Vector;
+
     if (!KEYPRESSED.ArrowDown && !KEYPRESSED.ArrowUp) {
       accForce.set(accForce.x, 0);
     }
@@ -57,18 +59,19 @@ export class Player extends Agent {
       accForce.y = -1;
     }
 
-    if (KEYPRESSED.ArrowRight) {
-      accForce.x = 1;
-    }
-
-    if (KEYPRESSED.ArrowLeft) {
-      accForce.x = -1;
-    }
+    accForce
+      .set(
+        accForce.x * Math.cos(this.rotation + toRadians(90)) -
+          accForce.y * Math.sin(this.rotation + toRadians(90)),
+        accForce.y * Math.cos(this.rotation + toRadians(90)) +
+          accForce.x * Math.sin(this.rotation + toRadians(90))
+      )
+      .setMag(MAX_PLAYER_ACC);
 
     return accForce;
   }
 
-  updateAngVel(): void {
+  updateRotation(): void {
     if (KEYPRESSED.a) {
       this.rotation -= 0.05;
     } else if (KEYPRESSED.d) {
@@ -103,23 +106,15 @@ export class Player extends Agent {
   update(): void {
     // this.ray.update();
 
-    this.updateAngVel();
-    const accForce = this.getMovement();
-    accForce
-      .set(
-        accForce.x * Math.cos(this.rotation + toRadians(90)) -
-          accForce.y * Math.sin(this.rotation + toRadians(90)),
-        accForce.y * Math.cos(this.rotation + toRadians(90)) +
-          accForce.x * Math.sin(this.rotation + toRadians(90))
-      )
-      .setMag(P_ACC);
+    this.updateRotation();
+    const accForce = this.updateAcc();
 
     if (KEYPRESSED.Spacebar) {
       this.acc.set(0, 0);
       this.vel.set(0, 0);
     } else {
       this.applyForce(accForce);
-      this.vel.add(this.acc).limit(P_VEL);
+      this.vel.add(this.acc).limit(MAX_PLAYER_VEL);
     }
 
     this.pos.add(this.vel);
@@ -135,31 +130,29 @@ export class Player extends Agent {
     }
   }
 
-  draw(cP: CavnasAPI) {
-    cP.circle(this.pos.x, this.pos.y, this.size, {
-      fill: this.fill,
-      stroke: this.stroke,
-    });
+  draw(cP: CavnasAPI, showDir?: boolean) {
+    cP.fill(this.fill);
+    cP.stroke(this.stroke);
+    cP.circle(this.pos.x, this.pos.y, this.size);
 
-    const dirVector = this.pos.copy();
+    if (showDir) {
+      const dirVector = this.pos.copy();
 
-    dirVector.set(
-      dirVector.x * Math.cos(this.rotation) -
-        dirVector.y * Math.sin(this.rotation),
-      dirVector.y * Math.cos(this.rotation) +
-        dirVector.x * Math.sin(this.rotation)
-    );
+      dirVector.set(
+        dirVector.x * Math.cos(this.rotation) -
+          dirVector.y * Math.sin(this.rotation),
+        dirVector.y * Math.cos(this.rotation) +
+          dirVector.x * Math.sin(this.rotation)
+      );
 
-    dirVector.setMag(25);
-    // cP.line(
-    //   this.pos.x,
-    //   this.pos.y,
-    //   this.pos.x + dirVector.x,
-    //   this.pos.y + dirVector.y,
-
-    //   {
-    //     stroke: 'red',
-    //   }
-    // );
+      dirVector.setMag(25);
+      cP.stroke('red');
+      cP.line(
+        this.pos.x,
+        this.pos.y,
+        this.pos.x + dirVector.x,
+        this.pos.y + dirVector.y
+      );
+    }
   }
 }
