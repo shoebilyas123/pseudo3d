@@ -1,8 +1,12 @@
 import Vector from '../geometry/vector';
 
+// Type Definitions
+
+export type KeyPressTypes = Record<string, boolean>;
+
 export const MOUSE: Vector = new Vector(0, 0);
 
-export const KEYPRESSED: Record<string, boolean> = {
+export const KEYPRESSED: KeyPressTypes = {
   ArrowUp: false,
   ArrowDown: false,
   ArrowRight: false,
@@ -11,8 +15,8 @@ export const KEYPRESSED: Record<string, boolean> = {
   w: false,
   s: false,
   d: false,
-  Spacebar: false,
-};
+  Sp: false,
+} as const;
 
 export const setKeyPressed = (key: string) => {
   KEYPRESSED[key] = true;
@@ -23,18 +27,18 @@ export const setKeyUp = (key: string) => {
 };
 
 export const onKeyDown = (e: KeyboardEvent) => {
-  if (e.key == ' ') {
-    setKeyPressed('Spacebar');
-  } else {
+  if (e.key != ' ') {
     setKeyPressed(e.key);
+  } else {
+    setKeyPressed('Sp');
   }
 };
 
 export const onKeyUp = (e: KeyboardEvent) => {
-  if (e.key == ' ') {
-    setKeyUp('Spacebar');
-  } else {
+  if (e.key != ' ') {
     setKeyUp(e.key);
+    setKeyUp('Sp');
+  } else {
   }
 };
 

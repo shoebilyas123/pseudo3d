@@ -1,1 +1,1 @@
-export type WorldTextures = Record<'wall', CanvasImageSource>;
+export type WorldTextures = Record<string, CanvasImageSource>;

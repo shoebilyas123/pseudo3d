@@ -1,5 +1,5 @@
 import CavnasAPI from '../canvas';
-import { MOUSE } from '../lib/canvas';
+import { MOUSE } from '../lib/events';
 import { createVector2D } from '../lib/geometry';
 import LineCollider from '../collisions/linecollider';
 import Vector from './vector';

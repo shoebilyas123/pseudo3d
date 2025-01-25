@@ -1,5 +1,5 @@
 import { CANVAS_BG } from '../constants';
-import { setMouse } from '../lib/canvas';
+import { setMouse } from '../lib/events';
 import { createVector2D } from '../lib/geometry';
 import Vector from '../geometry/vector';
 
@@ -44,10 +44,10 @@ export default class CavnasAPI {
     this.ctx.fillStyle = f;
   }
   noFill() {
-    this.ctx.fillStyle = 'none';
+    this.ctx.fillStyle = '';
   }
   noStroke() {
-    this.ctx.strokeStyle = 'none';
+    this.ctx.strokeStyle = '';
   }
   lineWidth(lw: number) {
     this.ctx.lineWidth = lw;
@@ -117,6 +117,7 @@ export default class CavnasAPI {
       this.ctx.moveTo(x + this.ORIGIN.x, y + this.ORIGIN.y);
       this.ctx.rect(x + this.ORIGIN.x, y + this.ORIGIN.y, w, h);
     }
+    this.ctx.stroke();
     this.ctx.fill();
     this.ctx.closePath();
   }
