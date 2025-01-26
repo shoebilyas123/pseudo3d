@@ -28,4 +28,4 @@ export const MAP_SIZEX = 600;
 export const MAP_SIZEY = 600;
 
 // Depth of field - How far the player
-export const DOF = 20;
+export const DOF = 10;

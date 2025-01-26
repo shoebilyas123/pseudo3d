@@ -2,7 +2,6 @@ import CavnasAPI from '../canvas';
 import { PLAYER_VEL } from '../constants';
 import { Vector } from '../geometry';
 import { KEYPRESSED } from '../lib/events';
-import { rotateAround } from '../lib/math';
 
 export default class Player {
   pos: Vector;
@@ -39,6 +38,7 @@ export default class Player {
         this.rot += 2 * Math.PI;
       }
     }
+
     this.vel.set(
       PLAYER_VEL * Math.cos(this.rot),
       PLAYER_VEL * Math.sin(this.rot)
