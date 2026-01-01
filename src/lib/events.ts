@@ -37,8 +37,8 @@ export const onKeyDown = (e: KeyboardEvent) => {
 export const onKeyUp = (e: KeyboardEvent) => {
   if (e.key != ' ') {
     setKeyUp(e.key);
-    setKeyUp('Sp');
   } else {
+    setKeyUp('Sp');
   }
 };
 

@@ -5,6 +5,13 @@ import { onKeyDown, onKeyUp } from './lib/events';
 import { map, rotateAround, toRadians } from './lib/math';
 import { WorldTextures } from './types/canvas';
 
+interface SceneData {
+  dist: number;
+  type: number;
+  horizontal: boolean;
+  angle: number;
+}
+
 import './style.css';
 import { Vector } from './geometry';
 // Cleaned up the code and will implement pseudo 3d again tomorrow
@@ -85,6 +92,7 @@ class Engine {
   player: Player;
   hIntersects: Vector[];
   vIntersects: Vector[];
+  scene: SceneData[];
 
   constructor() {
     this.cvs = new CanvasAPI('app', MAP_SIZEX, MAP_SIZEY);
@@ -104,6 +112,7 @@ class Engine {
     ];
     this.hIntersects = [];
     this.vIntersects = [];
+    this.scene = [];
 
     this.player = new Player(100, 224);
 
@@ -118,19 +127,16 @@ class Engine {
   }
 
   raycasting() {
-    // Store the intersection point starting from the nearest intersection
+    this.scene = [];
+    let dist, color, h;
     let N = new Vector();
     this.hIntersects = [];
     this.vIntersects = [];
-    // Depth of field
     let dof;
-    // Increment values for x and y to calculate the next intersection point
-    let Ya = TILESIZE,
-      Xa;
-    // Store the cell that our ray collides with
-    let mapX, mapY;
-    // Store the individual vertical and horizontal intersections for comparison
-    let iV: Vector, iH: Vector;
+    let Ya = TILESIZE, Xa;
+    let mapX = 0, mapY = 0;
+    let iV = new Vector(), iH = new Vector();
+
     for (let ray = -25; ray < 25; ray++) {
       dof = 0;
       N = new Vector();
@@ -149,10 +155,10 @@ class Engine {
       // ------Check horizontal intersection
       if (rayRad > Math.PI) {
         // Looking up
-        N.y = Math.floor(this.player.pos.y / TILESIZE) * TILESIZE;
+        N.y = Math.floor(this.player.pos.y / TILESIZE) * TILESIZE - 0.0001; // Subtract small amount to handle boundary correctly
         Ya = -TILESIZE;
       }
-      if (rayRad > 0 && rayRad < Math.PI) {
+      if (rayRad < Math.PI && rayRad > 0) {
         // Looking down
         N.y = Math.floor(this.player.pos.y / TILESIZE) * TILESIZE + TILESIZE;
         Ya = TILESIZE;
@@ -173,48 +179,46 @@ class Engine {
         mapX = Math.floor(N.x / TILESIZE);
         mapY = Math.floor(N.y / TILESIZE);
 
-        if (rayRad > Math.PI) {
-          mapY -= 1;
-        }
-
         if (
           mapX >= 0 &&
           mapY >= 0 &&
           mapX < this.worldMap[0].length &&
           mapY < this.worldMap.length &&
-          this.worldMap[mapX][mapY] > 0
+          this.worldMap[mapY][mapX] > 0
         ) {
           // We hit a wall
-          dof = DOF;
-          break;
+          dof = DOF; // Stop loop
         } else {
           N.x += Xa;
           N.y += Ya;
+          dof++;
         }
-        dof++;
       }
       iH = N.copy();
 
-      // ------Check horizontal intersection
+      // ------Check vertical intersection
       dof = 0;
       N = new Vector();
-      if (rayRad < Math.PI / 2 || rayRad > (3 * Math.PI) / 2) {
+      // NOTE: Fixed logic for looking left/right
+      if (rayRad > 3 * Math.PI / 2 || rayRad < Math.PI / 2) {
         // Looking right
         N.x = Math.floor(this.player.pos.x / TILESIZE) * TILESIZE + TILESIZE;
-        Xa = +TILESIZE;
+        Xa = TILESIZE;
       }
-      if (rayRad > Math.PI / 2 && rayRad < (3 * Math.PI) / 2) {
+      else if (rayRad > Math.PI / 2 && rayRad < 3 * Math.PI / 2) {
         // Looking left
-        N.x = Math.floor(this.player.pos.x / TILESIZE) * TILESIZE;
+        N.x = Math.floor(this.player.pos.x / TILESIZE) * TILESIZE - 0.0001;
         Xa = -TILESIZE;
       }
 
+      // N.y calculation: tan(angle) = opposite/adjacent -> y = x * tan
+      // dy/dx = tan(angle) -> dy = dx * tan(angle)
       N.y = this.player.pos.y + (N.x - this.player.pos.x) * pTan;
 
       // Using the tan = perpendicular / base formula
       Ya = Xa * pTan;
 
-      if (rayRad == (3 * Math.PI) / 2 || rayRad == Math.PI / 2) {
+      if (rayRad == 3 * Math.PI / 2 || rayRad == Math.PI / 2) {
         dof = DOF;
         N.x = Infinity;
         N.y = Infinity;
@@ -224,34 +228,107 @@ class Engine {
         mapX = Math.floor(N.x / TILESIZE);
         mapY = Math.floor(N.y / TILESIZE);
 
-        if (rayRad > Math.PI / 2 && rayRad < (3 * Math.PI) / 2) {
-          // If looking left
-          mapX -= 1;
-        }
-
         if (
           mapX >= 0 &&
           mapY >= 0 &&
           mapX < this.worldMap[0].length &&
           mapY < this.worldMap.length &&
-          this.worldMap[mapX][mapY] > 0
+          this.worldMap[mapY][mapX] > 0
         ) {
           // We hit a wall vertical
           dof = DOF;
-          break;
         } else {
           N.x += Xa;
           N.y += Ya;
+          dof++;
         }
-        dof++;
       }
       iV = N.copy();
 
-      if (iV.dist(this.player.pos) < iH.dist(this.player.pos)) {
+      let hDist = iH.dist(this.player.pos);
+      let vDist = iV.dist(this.player.pos);
+
+      // Determine which ray is shorter
+      if (vDist < hDist) {
         this.vIntersects.push(iV);
+        dist = vDist;
+        h = false;
+        // Fix fisheye
+        let ca = this.player.rot - rayRad;
+        if (ca < 0) ca += 2 * Math.PI;
+        if (ca > 2 * Math.PI) ca -= 2 * Math.PI;
+        dist = dist * Math.cos(ca);
+
+        this.scene.push({
+          dist: dist,
+          type: 1, // Default to 1 for now as map only has 1s
+          horizontal: false,
+          angle: rayRad
+        });
       } else {
         this.hIntersects.push(iH);
+        dist = hDist;
+        h = true;
+        // Fix fisheye
+        let ca = this.player.rot - rayRad;
+        if (ca < 0) ca += 2 * Math.PI;
+        if (ca > 2 * Math.PI) ca -= 2 * Math.PI;
+        dist = dist * Math.cos(ca);
+
+        this.scene.push({
+          dist: dist,
+          type: 1,
+          horizontal: true,
+          angle: rayRad
+        });
       }
+    }
+  }
+
+  load3DScene() {
+    // Width of each strip to fill the screen
+    // 50 rays = 50 strips. 600 width / 50 = 12px per strip.
+    const w = MAP_SIZEX / 50;
+
+    for (let i = 0; i < this.scene.length; i++) {
+      const data = this.scene[i];
+      // Calculate height
+      // h = (tileSize * distToProjPlane) / dist
+      // distToProjPlane = (MAP_SIZEX / 2) / tan(FOV / 2)
+      // FOV is approx 50 degrees? (loop -25 to 25)
+      // Actually let's just tune the scalar.
+      // Standard: projectedHeight = (realHeight / distance) * distanceToProjectionPlane
+
+      let lineH = (TILESIZE * MAP_SIZEX) / data.dist;
+
+      // Cap height to avoid drawing massive rectangles when inside a wall
+      if (lineH > MAP_SIZEY) lineH = MAP_SIZEY;
+
+      // Center the line
+      const lineOff = (MAP_SIZEY / 2) - (lineH / 2);
+
+      // Select color
+      let color;
+      // Use different color maps for horizontal/vertical to give depth perception
+      // Assuming map value is index, here we just use the constant arrays
+      if (data.horizontal) {
+        // Use map value if we had it, for now pick one based on array index or constant
+        // Since we pushed type: 1, let's use index 0 or something.
+        // Or maybe index i helps differentiate strips? No, same wall should be same color.
+        // Inspecting textureHeightMap... it's just colors.
+        color = textureHeightMap[1]; // Greenish
+      } else {
+        color = textureHeightMapV[1]; // Darker Greenish
+      }
+
+      // Distance shading (fog)
+      // Simple darkening: not implemented yet, using flat colors.
+
+      this.cvs3D.fill(color);
+      this.cvs3D.noStroke(); // No outline for strips
+      // Draw the strip
+      // i * w is the x position
+      this.cvs3D.rect(i * w, lineOff, w + 1, lineH); // +1 width to fix gaps
     }
   }
 
@@ -300,7 +377,7 @@ class Engine {
 
     //   Raycasting algorithm
     this.raycasting();
-    this.showRaycasts();
+    this.showRaycasts(); // Still show 2D rays
     this.load3DScene();
     requestAnimationFrame(this.render.bind(this));
   }
